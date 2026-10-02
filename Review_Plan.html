@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>多科目复习打卡 · 多图 AI 识别</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    margin:0;padding:22px 14px 80px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:linear-gradient(180deg,#eef2ff 0,#f6f8fc 360px,#f6f8fc 100%);
+    color:#1f2430;min-height:100vh;
+  }
+  .wrap{max-width:900px;margin:0 auto}
+  header{margin-bottom:18px}
+  h1{font-size:22px;margin:0 0 6px;letter-spacing:.3px}
+  .sub{margin:0;color:#6b7691;font-size:13.5px;line-height:1.6}
+
+  .card{
+    background:#fff;border:1px solid #e8ecf5;border-radius:16px;
+    padding:18px;margin-bottom:14px;
+    box-shadow:0 2px 14px rgba(28,40,80,.06);
+  }
+  .step-title{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:650;margin-bottom:14px}
+  .num{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:22px;height:22px;border-radius:7px;background:#4f6ef7;color:#fff;
+    font-size:12.5px;font-weight:700;flex:0 0 auto;
+  }
+
+  /* 科目栏 */
+  .subject-tabs{
+    display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;
+    -webkit-overflow-scrolling:touch;scrollbar-width:thin;
+  }
+  .subject-tabs::-webkit-scrollbar{height:5px}
+  .subject-tabs::-webkit-scrollbar-thumb{background:#dbe2f2;border-radius:9px}
+  .tab{
+    flex:0 0 auto;border:1px solid #e0e6f4;background:#f7f9fe;border-radius:11px;
+    padding:8px 13px;font-size:13.5px;font-weight:600;color:#5a6480;cursor:pointer;
+    display:flex;align-items:center;gap:7px;transition:.15s;font-family:inherit;white-space:nowrap;
+  }
+  .tab:hover{border-color:#c6d2f2}
+  .tab.active{background:#4f6ef7;border-color:#4f6ef7;color:#fff;box-shadow:0 4px 12px rgba(79,110,247,.26)}
+  .tab .cnt{font-size:11.5px;font-weight:600;background:rgba(0,0,0,.07);padding:1px 7px;border-radius:99px}
+  .tab.active .cnt{background:rgba(255,255,255,.26)}
+
+  /* 上传区 */
+  .drop{
+    border:2px dashed #c7d0e8;border-radius:14px;padding:26px 16px;
+    text-align:center;color:#6b7691;cursor:pointer;transition:.2s;background:#fafbff;
+  }
+  .drop:hover,.drop.over{border-color:#4f6ef7;background:#f0f4ff;color:#4f6ef7}
+  .drop .big{font-size:30px;line-height:1.2;margin-bottom:8px}
+  .drop .small{font-size:12.5px;margin-top:6px;opacity:.85}
+
+  .thumbs{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));
+    gap:10px;margin-top:14px;
+  }
+  .thumb{
+    position:relative;border-radius:10px;overflow:hidden;border:1px solid #e3e8f5;
+    background:#f7f9fd;aspect-ratio:3/4;cursor:zoom-in;
+  }
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb .idx{
+    position:absolute;left:5px;top:5px;background:rgba(31,36,48,.72);color:#fff;
+    font-size:11px;padding:1px 6px;border-radius:6px;font-weight:600;
+  }
+  .thumb .rm{
+    position:absolute;right:4px;top:4px;width:21px;height:21px;border-radius:50%;
+    border:none;background:rgba(31,36,48,.72);color:#fff;font-size:14px;line-height:1;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;
+    transition:.15s;
+  }
+  .thumb .rm:hover{background:#e5484d}
+
+  /* 表单 */
+  .field{display:block;margin-bottom:12px}
+  .field>span{display:block;font-size:12.5px;color:#6b7691;margin-bottom:5px;font-weight:500}
+  input[type=text],input[type=password],select,textarea{
+    width:100%;border:1px solid #dfe5f2;border-radius:10px;padding:10px 12px;
+    font-size:14px;font-family:inherit;outline:none;background:#fbfcff;
+    color:#1f2430;transition:.15s;
+  }
+  input:focus,select:focus,textarea:focus{border-color:#4f6ef7;background:#fff;box-shadow:0 0 0 3px rgba(79,110,247,.1)}
+  textarea{resize:vertical;line-height:1.55}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr}}
+
+  details.cfg{border:1px solid #e8ecf5;border-radius:12px;background:#fbfcff;overflow:hidden}
+  details.cfg>summary{
+    padding:12px 14px;cursor:pointer;font-size:13.5px;font-weight:600;color:#4b5568;
+    list-style:none;user-select:none;
+  }
+  details.cfg>summary::-webkit-details-marker{display:none}
+  details.cfg>summary::before{content:"⚙️ ";}
+  .cfg-body{padding:0 14px 14px}
+
+  .hint{font-size:12.5px;color:#7a849c;line-height:1.6;margin:8px 0 0}
+  .hint.warn{color:#a16207;background:#fffbeb;border:1px solid #fde68a;padding:8px 10px;border-radius:9px}
+
+  /* 按钮 */
+  .btn{
+    border:none;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:600;
+    cursor:pointer;transition:.15s;font-family:inherit;
+  }
+  .btn.primary{background:#4f6ef7;color:#fff;box-shadow:0 4px 14px rgba(79,110,247,.28)}
+  .btn.primary:hover:not(:disabled){background:#4160ea;transform:translateY(-1px)}
+  .btn.primary:disabled{background:#c3cbe4;box-shadow:none;cursor:not-allowed}
+  .btn.ghost{background:#eef1fa;color:#4b5568}
+  .btn.ghost:hover:not(:disabled){background:#e3e8f7}
+  .btn.ghost:disabled{opacity:.5;cursor:not-allowed}
+  .btn.danger{background:#fdecec;color:#d9383d}
+  .btn.danger:hover:not(:disabled){background:#fbdcdc}
+  .btn.block{width:100%;margin-bottom:10px}
+  .row-btns{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}
+
+  /* 状态 */
+  .status{
+    margin-top:12px;font-size:13.5px;color:#4b5568;background:#f4f7ff;
+    border:1px solid #e3eaff;padding:11px 14px;border-radius:10px;
+    display:flex;align-items:center;gap:9px;line-height:1.5;
+  }
+  .spinner{
+    width:14px;height:14px;border:2px solid #c9d5ff;border-top-color:#4f6ef7;
+    border-radius:50%;animation:spin .7s linear infinite;flex:0 0 auto;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* 进度 */
+  .progress-head{display:flex;justify-content:space-between;font-size:13px;color:#6b7691;margin-bottom:8px}
+  #progressPct{font-weight:700;color:#4f6ef7}
+  .progress{height:9px;background:#eaeef7;border-radius:99px;overflow:hidden;margin-bottom:16px}
+  .progress>i{display:block;height:100%;width:0;border-radius:99px;
+    background:linear-gradient(90deg,#4f6ef7,#7b8cff);transition:width .35s cubic-bezier(.4,0,.2,1)}
+
+  /* 目录树 */
+  #list{max-height:60vh;overflow:auto;padding-right:4px}
+  .tree{list-style:none;margin:0;padding:0}
+  .tree .tree{margin-left:20px;border-left:1px dashed #dde3f0;padding-left:8px}
+  .row{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:9px;transition:.12s}
+  .row:hover{background:#f5f7fd}
+  .caret{
+    background:none;border:none;width:18px;height:18px;padding:0;flex:0 0 auto;
+    color:#9aa5bd;cursor:pointer;font-size:11px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .16s;border-radius:5px;
+  }
+  .caret:hover{background:#e6ebf8;color:#4f6ef7}
+  .caret.open{transform:rotate(90deg)}
+  .caret-ph{width:18px;flex:0 0 auto}
+  .box{
+    width:18px;height:18px;border-radius:6px;border:2px solid #c7d0e8;
+    cursor:pointer;flex:0 0 auto;position:relative;transition:.15s;background:#fff;
+  }
+  .box:hover{border-color:#8fa3e8}
+  .box.checked{background:#4f6ef7;border-color:#4f6ef7}
+  .box.checked::after{
+    content:"";position:absolute;left:4px;top:0px;width:4px;height:8px;
+    border:2px solid #fff;border-top:0;border-left:0;transform:rotate(45deg);
+  }
+  .box.part{background:#4f6ef7;border-color:#4f6ef7}
+  .box.part::after{
+    content:"";position:absolute;left:3px;top:6px;width:8px;height:2px;
+    background:#fff;border-radius:2px;
+  }
+  .title{flex:1;font-size:14.5px;line-height:1.45;cursor:pointer;word-break:break-word}
+  .title.done{color:#a3adc2;text-decoration:line-through}
+  .del{
+    opacity:0;background:none;border:none;color:#b9c1d4;font-size:18px;
+    cursor:pointer;padding:0 5px;line-height:1;transition:.15s;border-radius:6px;
+  }
+  .row:hover .del{opacity:1}
+  .del:hover{color:#e5484d;background:#fdecec}
+  .empty{text-align:center;color:#9aa5bd;font-size:13.5px;padding:26px 0;margin:0;line-height:1.8}
+
+  /* 灯箱 */
+  .lightbox{
+    position:fixed;inset:0;background:rgba(10,12,20,.93);z-index:1000;
+    display:flex;align-items:center;justify-content:center;padding:18px;cursor:zoom-out;
+  }
+  .lightbox img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px}
+
+  /* toast */
+  .toast{
+    position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);
+    background:#1f2430;color:#fff;padding:11px 20px;border-radius:11px;
+    font-size:13.5px;opacity:0;pointer-events:none;transition:.25s;z-index:999;
+    max-width:86vw;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.2);
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast.error{background:#e5484d}
+  .toast.success{background:#12a150}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>📚 多科目复习打卡</h1>
+    <p class="sub">按科目管理 · 一次上传多张目录照片 · AI 合并识别成完整清单 · 勾选即保存</p>
+  </header>
+
+  <!-- 0. 科目 -->
+  <section class="card">
+    <div class="step-title"><span class="num">0</span>选择 / 管理科目</div>
+    <div class="subject-tabs" id="subjectTabs"></div>
+    <div class="row-btns" style="margin-top:0">
+      <button class="btn ghost" id="addSubjectBtn">＋ 新建科目</button>
+      <button class="btn ghost" id="renameSubjectBtn">重命名</button>
+      <button class="btn danger" id="deleteSubjectBtn">删除当前科目</button>
+    </div>
+  </section>
+
+  <!-- 1. 上传 -->
+  <section class="card">
+    <div class="step-title"><span class="num">1</span>上传目录图片（可多张）</div>
+
+    <div class="drop" id="drop">
+      <div class="big">📷</div>
+      <div><strong>点击选择 / 拍照 / 拖拽图片到这里</strong></div>
+      <div class="small">支持一次选多张 · 请按目录页顺序选择，识别时会自动合并</div>
+    </div>
+
+    <input type="file" id="fileInput" accept="image/*" multiple hidden>
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
+
+    <div class="row-btns" id="pickRow">
+      <button class="btn primary" id="pickBtn">选择图片</button>
+      <button class="btn ghost" id="cameraBtn">拍照</button>
+    </div>
+
+    <div class="thumbs" id="thumbs"></div>
+
+    <p class="hint">💡 图片只保存在当前页面会话中（刷新后需重新上传），但识别出的目录和勾选进度会永久保留在本机。</p>
+  </section>
+
+  <!-- 2. 配置 -->
+  <section class="card">
+    <div class="step-title"><span class="num">2</span>配置识别引擎</div>
+
+    <details class="cfg">
+      <summary>API 配置</summary>
+      <div class="cfg-body">
+        <label class="field">
+          <span>识别方式</span>
+          <select id="engine">
+            <option value="deepseek">DeepSeek + 浏览器 OCR（多图逐张转文字后合并）</option>
+            <option value="vision">视觉大模型直接读图（一次发送多张图片）</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>API Key</span>
+          <input type="password" id="apiKey" placeholder="sk-..." autocomplete="off" spellcheck="false">
+        </label>
+
+        <div class="grid2">
+          <label class="field">
+            <span>Base URL</span>
+            <input type="text" id="baseUrl" spellcheck="false">
+          </label>
+          <label class="field">
+            <span>模型名</span>
+            <input type="text" id="model" spellcheck="false">
+          </label>
+        </div>
+
+        <p class="hint" id="modelHint"></p>
+        <p class="hint warn">⚠️ Key 仅保存在你本机浏览器的 localStorage 中，本页面只会把它发送到你填写的那个 API 地址。建议在个人设备上使用。</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- 3. 识别 -->
+  <section class="card">
+    <div class="step-title"><span class="num">3</span>合并识别</div>
+
+    <label class="field">
+      <span>识别结果如何处理当前科目的目录</span>
+      <select id="mergeMode">
+        <option value="replace">覆盖（用新识别的目录替换现有目录）</option>
+        <option value="append">追加（把新章节添加到现有目录末尾）</option>
+      </select>
+    </label>
+
+    <button class="btn primary block" id="recognizeBtn">🚀 识别图片并生成目录</button>
+    <div class="status" id="status" hidden></div>
+
+    <details class="cfg" style="margin-top:12px">
+      <summary>手动粘贴目录文字</summary>
+      <div class="cfg-body">
+        <textarea id="rawText" rows="6" placeholder="把目录文字粘贴到这里，例如：&#10;第一章 绪论&#10;1.1 研究背景&#10;1.2 研究意义&#10;第二章 ..."></textarea>
+        <div class="row-btns">
+          <button class="btn ghost" id="fromTextBtn">用这段文字生成目录</button>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- 4. 清单 -->
+  <section class="card">
+    <div class="step-title"><span class="num">4</span>勾选已复习的章节</div>
+
+    <div class="progress-head">
+      <span id="progressText">0 / 0 章节已复习</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress"><i id="progressBar"></i></div>
+
+    <div id="list"></div>
+
+    <div class="row-btns">
+      <button class="btn ghost" id="toggleAllBtn">全部标记 / 取消</button>
+      <button class="btn ghost" id="addBtn">＋ 手动添加章节</button>
+      <button class="btn ghost" id="resetBtn">重置本科目进度</button>
+      <button class="btn ghost" id="clearAllBtn">清空本科目目录</button>
+    </div>
+  </section>
+
+</div>
+
+<!-- OCR 引擎（DeepSeek 模式下使用） -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script>
+/* =========================================================
+   工具
+   ========================================================= */
+const $  = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => (
+  {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+));
+const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3);
+
+let toastTimer;
+function toast(msg, type = 'info') {
+  let el = document.getElementById('toast');
+  if (!el) { el = document.createElement('div'); el.id = 'toast'; document.body.appendChild(el); }
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = 'toast'; }, 3000);
+}
+
+function setStatus(html) {
+  const el = $('#status');
+  if (!html) { el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.innerHTML = html;
+}
+
+function openLightbox(src) {
+  const box = document.createElement('div');
+  box.className = 'lightbox';
+  const img = document.createElement('img');
+  img.src = src;
+  box.appendChild(img);
+  box.addEventListener('click', () => box.remove());
+  document.body.appendChild(box);
+}
+
+/* =========================================================
+   状态
+   ========================================================= */
+const LS_KEY = 'review-checklist-v2';
+
+const DEFAULTS = {
+  deepseek: { baseUrl: 'https://api.deepseek.com', model: 'deepseek-chat' },
+  vision:   { baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-vl-max' }
+};
+
+const state = {
+  activeId: null,
+  subjects: []   // {id, name, images:[dataURL], outline:[]}
+};
+
+function createSubject(name) {
+  return { id: uid(), name: name || '新科目', images: [], outline: [] };
+}
+
+function currentSubject() {
+  let s = state.subjects.find(x => x.id === state.activeId);
+  if (!s) { s = state.subjects[0]; if (s) state.activeId = s.id; }
+  return s;
+}
+
+/* =========================================================
+   图片处理
+   ========================================================= */
+function fileToDataURL(file, maxSide = 1800, quality = 0.85) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      let w = img.naturalWidth, h = img.naturalHeight;
+      const scale = Math.min(1, maxSide / Math.max(w, h));
+      w = Math.max(1, Math.round(w * scale));
+      h = Math.max(1, Math.round(h * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('图片解析失败')); };
+    img.src = url;
+  });
+}
+
+async function handleFiles(files) {
+  const arr = Array.from(files || []).filter(f => f.type.startsWith('image/'));
+  if (!arr.length) return toast('请选择图片文件', 'error');
+
+  const subj = currentSubject();
+  if (!subj) return;
+
+  setStatus('<span class="spinner"></span>正在处理图片…');
+  let ok = 0;
+  for (const f of arr) {
+    try {
+      const d = await fileToDataURL(f);
+      subj.images.push(d);
+      ok++;
+    } catch (e) { console.warn(e); }
+  }
+  setStatus('');
+  renderThumbs();
+  toast(`已添加 ${ok} 张图片`, 'success');
+}
+
+/* =========================================================
+   OCR（Tesseract.js，worker 复用）
+   ========================================================= */
+let ocrWorker = null;
+let ocrProgressCb = null;
+
+async function getOcrWorker() {
+  if (ocrWorker) return ocrWorker;
+  if (typeof Tesseract === 'undefined') {
+    throw new Error('OCR 库未加载成功，请检查网络后刷新页面');
+  }
+  ocrWorker = await Tesseract.createWorker('chi_sim+eng', 1, {
+    logger: m => {
+      if (m.status === 'recognizing text' && typeof ocrProgressCb === 'function') {
+        ocrProgressCb(m.progress || 0);
+      }
+    }
+  });
+  return ocrWorker;
+}
+
+async function ocrImage(dataURL, cb) {
+  const w = await getOcrWorker();
+  ocrProgressCb = cb;
+  try {
+    const { data } = await w.recognize(dataURL);
+    return data.text || '';
+  } finally {
+    ocrProgressCb = null;
+  }
+}
+
+/* =========================================================
+   大模型调用（OpenAI 兼容）
+   ========================================================= */
+const SYSTEM_PROMPT = `你是一个教材目录结构化助手。用户会给你一本书 / 一份资料的目录信息（可能来自多页 OCR，存在错别字、断行、乱序、页眉页脚干扰）。
+
+请把它整理成清晰的层级目录，并且【只输出 JSON】。
+
+输出格式（严格）：
+[
+  {"title": "第一章 绪论", "children": [{"title": "1.1 研究背景"}, {"title": "1.2 研究意义"}]},
+  {"title": "第二章 相关理论", "children": []}
+]
+
+规则：
+1. 只输出 JSON 数组，不要 markdown 代码块，不要任何解释文字。
+2. 最多两级：章 → 节。没有子项时 children 用空数组。
+3. 多页 / 多图内容必须合并成一份完整目录：跨页断开的章节要拼接完整；重复出现的标题（页眉、重复页、翻拍重复）要去重，绝不能出现重复章节。
+4. 保留原有章节编号，修正明显的 OCR 错别字（如「笫」→「第」、「苐」→「第」）。
+5. 过滤页眉页脚、页码、水印、广告、书籍购买信息等噪声。
+6. 如果内容中完全没有目录信息，输出 []。`;
+
+async function chatCompletion({ baseUrl, apiKey, model, messages, temperature = 0.1 }) {
+  const url = String(baseUrl).replace(/\/+$/, '') + '/chat/completions';
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiKey
+    },
+    body: JSON.stringify({ model, messages, temperature, stream: false })
+  });
+  const raw = await res.text();
+  if (!res.ok) throw new Error(`接口返回 ${res.status}：${raw.slice(0, 300)}`);
+
+  let data;
+  try { data = JSON.parse(raw); }
+  catch { throw new Error('接口返回的不是 JSON：' + raw.slice(0, 200)); }
+
+  const content = data?.choices?.[0]?.message?.content;
+  if (!content) throw new Error('接口未返回内容：' + raw.slice(0, 200));
+  return content;
+}
+
+function extractJSON(text) {
+  let t = String(text).trim();
+  t = t.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  const start = t.indexOf('[');
+  const end = t.lastIndexOf(']');
+  if (start === -1 || end <= start) throw new Error('模型没有返回合法的 JSON 数组');
+  let arr;
+  try { arr = JSON.parse(t.slice(start, end + 1)); }
+  catch (e) { throw new Error('JSON 解析失败：' + e.message); }
+  if (!Array.isArray(arr)) throw new Error('模型返回的不是数组');
+  return arr;
+}
+
+/* =========================================================
+   目录树
+   ========================================================= */
+function normalizeTree(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .filter(n => n && typeof n.title === 'string' && n.title.trim())
+    .map(n => ({
+      id: uid(),
+      title: n.title.trim(),
+      done: false,
+      open: true,
+      children: Array.isArray(n.children) ? normalizeTree(n.children) : []
+    }));
+}
+
+function nodeState(n) {
+  if (n.children && n.children.length) {
+    const states = n.children.map(nodeState);
+    if (states.every(s => s === 'done')) return 'done';
+    if (states.every(s => s === 'none')) return 'none';
+    return 'part';
+  }
+  return n.done ? 'done' : 'none';
+}
+
+function setAllDone(n, v) {
+  n.done = v;
+  if (n.children) n.children.forEach(c => setAllDone(c, v));
+}
+
+function countLeaves(nodes) {
+  let c = 0;
+  nodes.forEach(n => {
+    if (n.children && n.children.length) c += countLeaves(n.children);
+    else c++;
+  });
+  return c;
+}
+
+function countDoneLeaves(nodes) {
+  let c = 0;
+  nodes.forEach(n => {
+    if (n.children && n.children.length) c += countDoneLeaves(n.children);
+    else if (n.done) c++;
+  });
+  return c;
+}
+
+function findNode(nodes, id) {
+  for (const n of nodes) {
+    if (n.id === id) return n;
+    if (n.children && n.children.length) {
+      const r = findNode(n.children, id);
+      if (r) return r;
+    }
+  }
+  return null;
+}
+
+function removeNode(nodes, id) {
+  const i = nodes.findIndex(n => n.id === id);
+  if (i >= 0) { nodes.splice(i, 1); return true; }
+  for (const n of nodes) {
+    if (n.children && removeNode(n.children, id)) return true;
+  }
+  return false;
+}
+
+/* =========================================================
+   渲染
+   ========================================================= */
+function renderSubjectTabs() {
+  const box = $('#subjectTabs');
+  box.innerHTML = state.subjects.map(s => {
+    const total = countLeaves(s.outline);
+    const done = countDoneLeaves(s.outline);
+    return `<button class="tab ${s.id === state.activeId ? 'active' : ''}" data-sid="${s.id}">
+      <span>${esc(s.name)}</span>
+      <span class="cnt">${done}/${total}</span>
+    </button>`;
+  }).join('');
+}
+
+function renderThumbs() {
+  const subj = currentSubject();
+  const box = $('#thumbs');
+  if (!subj || !subj.images.length) {
+    box.innerHTML = '';
+    $('#pickRow').style.display = 'flex';
+    $('#drop').style.display = '';
+  } else {
+    $('#drop').style.display = 'none';
+    $('#pickRow').style.display = 'flex';
+    box.innerHTML = subj.images.map((src, i) => `
+      <div class="thumb" data-idx="${i}">
+        <img src="${src}" alt="第 ${i + 1} 张">
+        <span class="idx">${i + 1}</span>
+        <button class="rm" data-rm="${i}" title="移除">×</button>
+      </div>`).join('');
+  }
+  updateRecognizeBtn();
+}
+
+function updateRecognizeBtn() {
+  const subj = currentSubject();
+  const n = subj ? subj.images.length : 0;
+  const btn = $('#recognizeBtn');
+  btn.textContent = n
+    ? `🚀 识别 ${n} 张图片并生成目录`
+    : '🚀 识别图片并生成目录（请先上传）';
+}
+
+function renderTree(nodes) {
+  if (!nodes.length) return '';
+  return '<ul class="tree">' + nodes.map(n => {
+    const st = nodeState(n);
+    const hasKids = n.children && n.children.length > 0;
+    const open = n.open !== false;
+    return `<li>
+      <div class="row" data-id="${n.id}">
+        ${hasKids
+          ? `<button class="caret ${open ? 'open' : ''}" data-act="toggle" aria-label="展开/收起">▶</button>`
+          : '<span class="caret-ph"></span>'}
+        <span class="box ${st === 'done' ? 'checked' : st === 'part' ? 'part' : ''}"
+              data-act="check" role="checkbox" aria-checked="${st === 'done'}"></span>
+        <span class="title ${st === 'done' ? 'done' : ''}" data-act="check">${esc(n.title)}</span>
+        <button class="del" data-act="del" title="删除这一项">×</button>
+      </div>
+      ${hasKids && open ? renderTree(n.children) : ''}
+    </li>`;
+  }).join('') + '</ul>';
+}
+
+function render() {
+  const subj = currentSubject();
+  const outline = subj ? subj.outline : [];
+  const list = $('#list');
+
+  if (!outline.length) {
+    list.innerHTML = '<p class="empty">「' + esc(subj ? subj.name : '') +
+      '」还没有目录内容<br>先上传图片识别，或手动添加章节 ✍️</p>';
+  } else {
+    list.innerHTML = renderTree(outline);
+  }
+  updateProgress();
+}
+
+function updateProgress() {
+  const subj = currentSubject();
+  const outline = subj ? subj.outline : [];
+  const total = countLeaves(outline);
+  const done = countDoneLeaves(outline);
+  const pct = total ? Math.round(done / total * 100) : 0;
+  $('#progressText').textContent = `${done} / ${total} 章节已复习`;
+  $('#progressPct').textContent = pct + '%';
+  $('#progressBar').style.width = pct + '%';
+}
+
+/* =========================================================
+   持久化（图片不保存，只存科目 + 目录 + 设置）
+   ========================================================= */
+function readSettings() {
+  return {
+    engine: $('#engine').value,
+    apiKey: $('#apiKey').value.trim(),
+    baseUrl: $('#baseUrl').value.trim(),
+    model: $('#model').value.trim()
+  };
+}
+
+function save() {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      activeId: state.activeId,
+      subjects: state.subjects.map(s => ({ id: s.id, name: s.name, outline: s.outline })),
+      settings: readSettings()
+    }));
+  } catch (e) { console.warn('保存失败', e); }
+}
+
+function load() {
+  let raw = null;
+  try { raw = localStorage.getItem(LS_KEY); } catch (e) {}
+
+  if (raw) {
+    try {
+      const data = JSON.parse(raw);
+      if (Array.isArray(data.subjects) && data.subjects.length) {
+        state.subjects = data.subjects.map(s => ({
+          id: s.id || uid(),
+          name: s.name || '科目',
+          images: [],
+          outline: Array.isArray(s.outline) ? s.outline : []
+        }));
+        state.activeId = data.activeId && state.subjects.some(s => s.id === data.activeId)
+          ? data.activeId : state.subjects[0].id;
+      }
+      const s = data.settings;
+      if (s) {
+        if (s.engine) $('#engine').value = s.engine;
+        applyEngineDefaults(true);
+        if (s.apiKey)  $('#apiKey').value  = s.apiKey;
+        if (s.baseUrl) $('#baseUrl').value = s.baseUrl;
+        if (s.model)   $('#model').value   = s.model;
+      }
+    } catch (e) { console.warn('读取本地数据失败', e); }
+  }
+
+  if (!state.subjects.length) {
+    const s = createSubject('默认科目');
+    state.subjects = [s];
+    state.activeId = s.id;
+  }
+}
+
+/* =========================================================
+   引擎默认值
+   ========================================================= */
+function applyEngineDefaults(overwrite) {
+  const engine = $('#engine').value;
+  const d = DEFAULTS[engine] || DEFAULTS.deepseek;
+  if (overwrite || !$('#baseUrl').value) $('#baseUrl').value = d.baseUrl;
+  if (overwrite || !$('#model').value)   $('#model').value   = d.model;
+
+  $('#modelHint').textContent = engine === 'deepseek'
+    ? '💡 DeepSeek 是纯文本模型，不能直接读图。此模式会先在浏览器本地对每张图片做 OCR，把多页文字按顺序拼接后，再交给 DeepSeek 合并成一份目录（更省钱，但首次需下载约 10MB 中文语言包）。'
+    : '💡 此模式会把多张图片一次性发给视觉模型。请填写兼容 OpenAI 格式、且支持多图输入的视觉接口，例如通义千问 qwen-vl-max、智谱 glm-4v、OpenAI gpt-4o 等。';
+}
+
+/* =========================================================
+   主流程
+   ========================================================= */
+function setBusy(b) {
+  $('#recognizeBtn').disabled = b;
+  $('#fromTextBtn').disabled = b;
+  ['addSubjectBtn', 'renameSubjectBtn', 'deleteSubjectBtn'].forEach(id => {
+    const el = $('#' + id);
+    if (el) el.disabled = b;
+  });
+}
+
+async function recognizeFromImages() {
+  const subj = currentSubject();
+  if (!subj) return;
+  if (!subj.images.length) return toast('请先上传目录图片', 'error');
+
+  const cfg = readSettings();
+  if (!cfg.apiKey) {
+    $('#engine').closest('details').open = true;
+    return toast('请先填写 API Key', 'error');
+  }
+  if (!cfg.baseUrl || !cfg.model) return toast('请填写 Base URL 和模型名', 'error');
+
+  const mode = $('#mergeMode').value;
+  const n = subj.images.length;
+
+  setBusy(true);
+  try {
+    let content;
+
+    if (cfg.engine === 'vision') {
+      /* ---------- 视觉模型：一次发送多张图 ---------- */
+      setStatus(`<span class="spinner"></span>正在把 ${n} 张图片发送给视觉模型…`);
+      const parts = [{
+        type: 'text',
+        text: `请识别以下 ${n} 张图片中的目录内容。它们已按顺序排列，可能是同一份目录的连续多页（也可能有重叠）。请合并成一份完整、无重复的目录，并按要求的 JSON 格式输出。`
+      }];
+      subj.images.forEach(src => {
+        parts.push({ type: 'image_url', image_url: { url: src } });
+      });
+
+      content = await chatCompletion({
+        ...cfg,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: parts }
+        ]
+      });
+    } else {
+      /* ---------- DeepSeek：先逐张 OCR，再合并 ---------- */
+      const texts = [];
+      for (let i = 0; i < n; i++) {
+        setStatus(`<span class="spinner"></span>正在 OCR 第 ${i + 1} / ${n} 张图片…（首次需下载中文语言包，请耐心等待）`);
+        const t = await ocrImage(subj.images[i], p => {
+          setStatus(`<span class="spinner"></span>正在 OCR 第 ${i + 1} / ${n} 张图片 ${Math.round(p * 100)}%…`);
+        });
+        texts.push(`----- 第 ${i + 1} 张 / 共 ${n} 张 -----\n${t.trim()}`);
+      }
+
+      const allText = texts.join('\n\n');
+      $('#rawText').value = allText;
+      $('#rawText').closest('details').open = false;
+
+      if (!allText.replace(/[-—\s\d]/g, '').length) {
+        throw new Error('OCR 没有识别出有效文字，请换更清晰、更正的图片');
+      }
+
+      setStatus('<span class="spinner"></span>正在调用 DeepSeek 合并整理目录…');
+      content = await chatCompletion({
+        ...cfg,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          {
+            role: 'user',
+            content: `以下是同一份目录的 ${n} 页 OCR 文字（按顺序），请合并成一份完整、无重复的目录：\n\n${allText}`
+          }
+        ]
+      });
+    }
+
+    const tree = normalizeTree(extractJSON(content));
+    if (!tree.length) throw new Error('没有解析出目录内容，请检查图片是否清晰、是否真的是目录页');
+
+    if (mode === 'append' && subj.outline.length) {
+      subj.outline = subj.outline.concat(tree);
+    } else {
+      subj.outline = tree;
+    }
+
+    save();
+    render();
+    renderSubjectTabs();
+    setStatus(`✅ 识别完成，共生成 <b>${countLeaves(tree)}</b> 个章节（${mode === 'append' ? '已追加' : '已覆盖'}）`);
+    toast('目录生成成功', 'success');
+  } catch (err) {
+    console.error(err);
+    setStatus('❌ ' + esc(err.message));
+    toast('识别失败：' + err.message, 'error');
+  } finally {
+    setBusy(false);
+  }
+}
+
+async function generateFromText() {
+  const subj = currentSubject();
+  const text = $('#rawText').value.trim();
+  if (!text) return toast('请先粘贴目录文字', 'error');
+
+  const cfg = readSettings();
+  if (!cfg.apiKey) return toast('请先填写 API Key', 'error');
+
+  const mode = $('#mergeMode').value;
+
+  setBusy(true);
+  setStatus('<span class="spinner"></span>正在调用模型整理目录…');
+  try {
+    const content = await chatCompletion({
+      ...cfg,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: '以下是目录文字：\n\n' + text }
+      ]
+    });
+    const tree = normalizeTree(extractJSON(content));
+    if (!tree.length) throw new Error('没有解析出目录内容');
+
+    if (mode === 'append' && subj.outline.length) {
+      subj.outline = subj.outline.concat(tree);
+    } else {
+      subj.outline = tree;
+    }
+
+    save(); render(); renderSubjectTabs();
+    setStatus(`✅ 生成完成，共 <b>${countLeaves(tree)}</b> 个章节`);
+    toast('目录生成成功', 'success');
+  } catch (err) {
+    console.error(err);
+    setStatus('❌ ' + esc(err.message));
+    toast('失败：' + err.message, 'error');
+  } finally {
+    setBusy(false);
+  }
+}
+
+/* =========================================================
+   科目操作
+   ========================================================= */
+function switchSubject(id) {
+  state.activeId = id;
+  save();
+  renderSubjectTabs();
+  renderThumbs();
+  render();
+  setStatus('');
+}
+
+function addSubject() {
+  const name = prompt('新科目名称，例如：高等数学 / 英语 / 专业课', '');
+  if (name === null) return;
+  const n = name.trim() || ('科目 ' + (state.subjects.length + 1));
+  const s = createSubject(n);
+  state.subjects.push(s);
+  state.activeId = s.id;
+  save();
+  renderSubjectTabs();
+  renderThumbs();
+  render();
+  toast('已创建「' + n + '」', 'success');
+}
+
+function renameSubject() {
+  const s = currentSubject();
+  if (!s) return;
+  const name = prompt('修改科目名称', s.name);
+  if (name === null) return;
+  const n = name.trim();
+  if (!n) return toast('名称不能为空', 'error');
+  s.name = n;
+  save(); renderSubjectTabs(); render();
+}
+
+function deleteSubject() {
+  if (state.subjects.length <= 1) {
+    return toast('至少保留一个科目', 'error');
+  }
+  const s = currentSubject();
+  if (!s) return;
+  if (!confirm(`确定删除科目「${s.name}」？\n其中的目录和进度都会丢失。`)) return;
+  state.subjects = state.subjects.filter(x => x.id !== s.id);
+  state.activeId = state.subjects[0].id;
+  save();
+  renderSubjectTabs(); renderThumbs(); render();
+  toast('已删除');
+}
+
+/* =========================================================
+   事件绑定
+   ========================================================= */
+function bindEvents() {
+  /* --- 科目 --- */
+  $('#subjectTabs').addEventListener('click', e => {
+    const t = e.target.closest('.tab');
+    if (t) switchSubject(t.dataset.sid);
+  });
+  $('#addSubjectBtn').addEventListener('click', addSubject);
+  $('#renameSubjectBtn').addEventListener('click', renameSubject);
+  $('#deleteSubjectBtn').addEventListener('click', deleteSubject);
+
+  /* --- 上传 --- */
+  const drop = $('#drop');
+  drop.addEventListener('click', () => $('#fileInput').click());
+  ['dragenter', 'dragover'].forEach(ev =>
+    drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev =>
+    drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e => {
+    const files = e.dataTransfer && e.dataTransfer.files;
+    if (files && files.length) handleFiles(files);
+  });
+
+  $('#fileInput').addEventListener('change', e => {
+    if (e.target.files && e.target.files.length) handleFiles(e.target.files);
+    e.target.value = '';
+  });
+  $('#cameraInput').addEventListener('change', e => {
+    if (e.target.files && e.target.files.length) handleFiles(e.target.files);
+    e.target.value = '';
+  });
+  $('#pickBtn').addEventListener('click', () => $('#fileInput').click());
+  $('#cameraBtn').addEventListener('click', () => $('#cameraInput').click());
+
+  /* --- 缩略图（点击查看 / 删除） --- */
+  $('#thumbs').addEventListener('click', e => {
+    const rm = e.target.closest('[data-rm]');
+    const subj = currentSubject();
+    if (!subj) return;
+
+    if (rm) {
+      e.stopPropagation();
+      subj.images.splice(Number(rm.dataset.rm), 1);
+      renderThumbs();
+      return;
+    }
+    const th = e.target.closest('.thumb');
+    if (th) {
+      const src = subj.images[Number(th.dataset.idx)];
+      if (src) openLightbox(src);
+    }
+  });
+
+  /* --- 配置 --- */
+  $('#engine').addEventListener('change', () => { applyEngineDefaults(true); save(); });
+  ['apiKey', 'baseUrl', 'model'].forEach(id => {
+    $('#' + id).addEventListener('change', save);
+  });
+  $('#mergeMode').addEventListener('change', save);
+
+  /* --- 识别 --- */
+  $('#recognizeBtn').addEventListener('click', recognizeFromImages);
+  $('#fromTextBtn').addEventListener('click', generateFromText);
+
+  /* --- 目录树事件委托 --- */
+  $('#list').addEventListener('click', e => {
+    const actEl = e.target.closest('[data-act]');
+    if (!actEl) return;
+    const row = actEl.closest('.row');
+    if (!row) return;
+    const subj = currentSubject();
+    if (!subj) return;
+    const node = findNode(subj.outline, row.dataset.id);
+    if (!node) return;
+    const act = actEl.dataset.act;
+
+    if (act === 'toggle') {
+      node.open = node.open === false;
+    } else if (act === 'check') {
+      setAllDone(node, nodeState(node) !== 'done');
+    } else if (act === 'del') {
+      removeNode(subj.outline, node.id);
+    }
+    save();
+    render();
+    renderSubjectTabs();
+  });
+
+  /* --- 底部操作 --- */
+  $('#toggleAllBtn').addEventListener('click', () => {
+    const subj = currentSubject();
+    if (!subj || !subj.outline.length) return;
+    const total = countLeaves(subj.outline);
+    const done = countDoneLeaves(subj.outline);
+    const target = !(total > 0 && done === total);
+    subj.outline.forEach(n => setAllDone(n, target));
+    save(); render(); renderSubjectTabs();
+  });
+
+  $('#addBtn').addEventListener('click', () => {
+    const subj = currentSubject();
+    if (!subj) return;
+    const title = prompt('输入章节名称，例如：第 3 章 数据结构');
+    if (!title || !title.trim()) return;
+    subj.outline.push({ id: uid(), title: title.trim(), done: false, open: true, children: [] });
+    save(); render(); renderSubjectTabs();
+    toast('已添加', 'success');
+  });
+
+  $('#resetBtn').addEventListener('click', () => {
+    const subj = currentSubject();
+    if (!subj || !subj.outline.length) return;
+    subj.outline.forEach(n => setAllDone(n, false));
+    save(); render(); renderSubjectTabs();
+    toast('本科目进度已重置');
+  });
+
+  $('#clearAllBtn').addEventListener('click', () => {
+    const subj = currentSubject();
+    if (!subj || !subj.outline.length) return;
+    if (!confirm(`确定清空「${subj.name}」的全部目录吗？此操作不可撤销。`)) return;
+    subj.outline = [];
+    save(); render(); renderSubjectTabs();
+    toast('目录已清空');
+  });
+}
+
+/* =========================================================
+   启动
+   ========================================================= */
+(function init() {
+  applyEngineDefaults(true);
+  load();
+  bindEvents();
+  renderSubjectTabs();
+  renderThumbs();
+  render();
+})();
+</script>
+</body>
+</html>
